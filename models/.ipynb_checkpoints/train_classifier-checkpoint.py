@@ -1,24 +1,66 @@
 import sys
-
+import sqlite3
+import pandas as pd
+import numpy as np
+import re
+from nltk.corpus import stopwords
+from nltk.tokenize import word_tokenize
+from nltk.stem import WordNetLemmatizer
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.feature_extraction.text import CountVectorizer, TfidfTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report
+from sklearn.externals import joblib
 
 def load_data(database_filepath):
-    pass
-
+    conn = sqlite3.connect(database_filepath)
+    df = pd.read_sql('SELECT * FROM disaster_data',conn)
+    X = df.message.values
+    Y = df.drop(['id','message','original','genre'],axis=1)
+    category_names=list(Y.columns)
+    return X,Y,category_names
+#load_data('disaster_data.db')
 
 def tokenize(text):
-    pass
+    text=re.sub(r"[^a-zA-Z0-9]", " ", text.lower())#normalize
+    token=word_tokenize(text)#tokenize
+    lemzer = WordNetLemmatizer()#lemmatizer
+    clean=[]
+    for tok in token:
+        clean_tok = lemzer.lemmatize(tok).strip()
+        clean.append(clean_tok)
+    clean_words = [w for w in clean if w not in stopwords.words("english")]#stopword removal
+    return clean_words
 
 
 def build_model():
-    pass
+    pipeline = Pipeline([
+        ('vect', CountVectorizer(tokenizer=tokenize)),
+        ('tfidf', TfidfTransformer()),
+        ('clf', MultiOutputClassifier(RandomForestClassifier()))
+    ])
+    parameters = {'clf__estimator__n_estimators': [100,150],
+             'clf__estimator__max_features':('sqrt','log2'),
+             'clf__estimator__min_samples_split':[2,20,50]}
 
+    cv = GridSearchCV(pipeline, param_grid=parameters,return_train_score=True)
+    return cv
+    
 
 def evaluate_model(model, X_test, Y_test, category_names):
-    pass
-
+    Y_pred = model.predict(X_test)
+    #target_names = list(Y_test.columns)
+    df_Y_pred=pd.DataFrame(Y_pred,columns=category_names)
+    for col in category_names:
+        print('Report of '+col+':\n',classification_report(Y_test[col].values,df_Y_pred[col].values))
+    
 
 def save_model(model, model_filepath):
-    pass
+    joblib.dump(cv,'cv.pkl')
 
 
 def main():
