@@ -58,19 +58,49 @@
             <h1 class="text-center">Overview of Training Dataset</h1>
         </div>
     {% endblock %}
+<div class="row">
+	<div class="col-12">
+		<div id="{{ids[0]}}"></div>
+	</div>
+  </div>
+<div class="row">
+	<div class="col-12">
+		<div id="{{ids[1]}}"></div>
+	</div>
+  </div>
 
-    {% for id in ids %}
-        <div id="{{id}}"></div>
-    {% endfor %}
+    <script type="text/javascript">
+        // plots the figure with id
+        // id much match the div id above in the html
+        var graphs = {{graphJSON | safe}};
+        var ids = {{ids | safe}};
+        for(let i in graphs) {
+            Plotly.plot(ids[i],
+                graphs[i].data,
+                graphs[i].layout);}
+    </script>
 </div>
 
-<script type="text/javascript">
-    const graphs = {{graphJSON | safe}};
-    const ids = {{ids | safe}};
-    for(let i in graphs) {
-        Plotly.plot(ids[i], graphs[i].data, graphs[i].layout);
-    }
-</script>
-
 </body>
+  
+  
+<!--footer section-->               
+<div id="footer" class="container"></div>  
+<footer>
+
+    <script type="text/javascript">
+        // plots the figure with id
+        // id much match the div id above in the html
+        var graphs = {{graphJSON | safe}};
+        var ids = {{ids | safe}};
+        for(var i in graphs) {
+            Plotly.plot(ids[i],
+                graphs[i].data,
+                graphs[i].layout || {});
+        }
+    </script>
+    
+</footer>  
+  
+
 </html>

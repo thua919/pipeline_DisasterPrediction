@@ -7,7 +7,7 @@ from nltk.tokenize import word_tokenize
 
 from flask import Flask
 from flask import render_template, request, jsonify
-from plotly.graph_objs import Bar
+from plotly.graph_objs import Bar,Scatter,Layout,Figure,Pie
 from sklearn.externals import joblib
 import sqlite3
 
@@ -33,54 +33,58 @@ df = pd.read_sql('SELECT * FROM disaster_data',conn)
 # load model
 model = joblib.load("cv.pkl")
 
+#creating the function that return figures
+def create_fig():
+    """create two plotly figures
+    Args:
+        None
+       Returns:
+        list(dict):list containing the two plotly visualizations
+     """
+    #figure 1
+    genre_names = df.columns[4:39].tolist()
+    genre_counts = df[genre_names].sum(axis=0)
+    graph_one=[Bar(
+      x=genre_names,
+      y=genre_counts)]
+
+    layout_one = Layout(title = 'Distribution of Message Types',
+                xaxis = dict(title = 'Types'),
+                yaxis = dict(title = 'Count'),
+                barmode='overlay',
+                showlegend=False
+                     )
+    #figure 2
+    labels=genre_names
+    values=genre_counts
+    graph_two=[Pie(
+          labels = labels,
+          values = values)]
+    layout_two = Layout(title = 'Percentage of All Message Types')
+
+    figures = [Figure(data=graph_one, layout=layout_one),
+              Figure(data=graph_two, layout=layout_two)]
+
+    return figures
+
 
 # index webpage displays cool visuals and receives user input text for model
 @app.route('/')
 @app.route('/index')
 def index():
-    
-    # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
-    genre_counts = df.groupby('death').count()['message']
-    genre_names = list(genre_counts.index)
-    
     # create visuals
-    # TODO: Below is an example - modify to create your own visuals
-    graphs = [
-        {
-            'data': [
-                Bar(
-                    x=genre_names,
-                    y=genre_counts
-                )
-            ],
-
-            'layout': {
-                'title': 'Distribution of Death Message',
-                'yaxis': {
-                    'title': "Count"
-                },
-                'xaxis': {
-                    'title': "Death"
-                }
-            }
-        }
-    ]
-    
+    graphs = create_fig()
     # encode plotly graphs in JSON
     ids = ["graph-{}".format(i) for i, _ in enumerate(graphs)]
     graphJSON = json.dumps(graphs, cls=plotly.utils.PlotlyJSONEncoder)
-    
     # render web page with plotly graphs
     return render_template('master.html', ids=ids, graphJSON=graphJSON)
-
 
 # web page that handles user query and displays model results
 @app.route('/go')
 def go():
     # save user input in query
-    query = request.args.get('query', '') 
-
+    query = request.args.get('query', '')
     # use model to predict classification for query
     classification_labels = model.predict([query])[0]
     classification_results = dict(zip(df.columns[4:], classification_labels))
