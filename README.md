@@ -1,5 +1,7 @@
 # Disaster Response Pipeline Project
 
+这是一个运用基础分词+分类器模型构建的灾害信息分类pipeline模型，本项目为Udacity Nanodegree DataScientist 的核心项目，代码已通过专业从业者审阅并确认模型基本功能完备、前后端联调正常。
+
 ### Instructions:
 1. Run the following commands in the project's root directory to set up your database and model.
 
